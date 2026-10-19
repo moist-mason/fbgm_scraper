@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.github.moistmason'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    maven { url = 'https://releases.aspose.com/java/repo/' }
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.14.0'
+    implementation 'com.aspose:aspose-cells:26.9'
+    implementation 'org.jsoup:jsoup:1.23.2'
+    implementation 'org.seleniumhq.selenium:selenium-java:4.50.0'
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.register('parseHtml', JavaExec) {
+    mainClass = 'com.github.moistmason.scraper.download.PlayerHtmlDownloader'
+    classpath = sourceSets.main.runtimeClasspath
+}
