@@ -26,6 +26,7 @@ public class HtmlUtil {
     public static final String PFR_URL = "https://www.pro-football-reference.com/";
     public static final String PFR_PLAYER_INDEX_HEADER = PFR_URL + "players/";
 
+    // Requests for creating and destroying browser sessions. Sessions make parsing faster.
     public static void sessionRequest(final String cmd, final String id) throws IOException, InterruptedException {
         final String payload = """
                 {
@@ -43,6 +44,7 @@ public class HtmlUtil {
         }
     }
 
+    // Checks what sessions are active. Not used very much, but kept in case I need it.
     public static void sessionCheck() throws IOException, InterruptedException {
         final String payload = """
                 {
@@ -56,6 +58,7 @@ public class HtmlUtil {
         response.ifPresent(System.out::println);
     }
 
+    // Requests the URL, returns the JSON response.
     public static Optional<String> getUrlResponse(final String url, final String id) throws IOException, InterruptedException {
         final String jsonPayload =
                 """
@@ -71,6 +74,7 @@ public class HtmlUtil {
         );
     }
 
+    // Gets the response from the input payload.
     public static Optional<String> getResponse(final String payload) throws IOException, InterruptedException {
         try (final HttpClient client = HttpClient.newHttpClient()) {
             final HttpRequest request = HttpRequest.newBuilder()
@@ -83,57 +87,11 @@ public class HtmlUtil {
         }
     }
 
-    public static HttpRequest getRequest(final String payload) {
-        return HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8191/v1"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build();
-    }
-
-    public static Document getHtml(final JsonObject root) {
+    // Gets the actual HTML Document data from the response JSON, using JSoup.
+    public static Document getDocument(final JsonObject root) {
         final JsonObject solution = root.get("solution").getAsJsonObject();
         final String response = solution.get("response").getAsString();
         return Jsoup.parse(response);
-    }
-
-    public static Document getDocument(final String url) throws IOException, InterruptedException {
-        final String agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
-        final String jsonPayload =
-                """
-                {
-                    "cmd": "request.get",
-                    "url": "${url}",
-                    "maxTimeout": 60000
-                }
-                """;
-        // Random interval between requests
-        final long randomInterval = new Random().nextLong(5L) * 1000;
-        Thread.sleep(randomInterval);
-
-        Thread.sleep(randomInterval);
-
-        return Jsoup.connect(url)
-                .userAgent(agent)
-                .header("Content-Type", "application/json")
-                .get();
-    }
-
-    // From text file, for testing
-    public static Document getDocument(final Path path, final String base) throws IOException {
-        final List<String> lines = Files.readAllLines(path);
-        final String html = String.join("\n", lines);
-        return Jsoup.parse(html);
-    }
-
-    public static void download(final String url, final Path output) throws IOException, InterruptedException {
-        final Document document = getDocument(url);
-        final String html = document.html();
-
-        try (BufferedWriter writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-            writer.write(html);
-            writer.flush();
-        }
     }
 
     public static Optional<Element> getElement(final Element parent, final String id) {

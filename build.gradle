@@ -19,9 +19,7 @@ java {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.14.0'
-    implementation 'com.aspose:aspose-cells:26.9'
     implementation 'org.jsoup:jsoup:1.23.2'
-    implementation 'org.seleniumhq.selenium:selenium-java:4.50.0'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'

@@ -23,7 +23,7 @@ public class PlayerHtmlDownloader {
         parseChunk(letter, playerUrls, 1051, 1200);
     }
 
-    public static void parseThreeChunks(final String letter, final int firstMin, final int secondMin, final int max) throws IOException, InterruptedException {
+    public static void parseChunks(final String letter, final int firstMin, final int secondMin, final int max) throws IOException, InterruptedException {
         final Path in = Path.of("data/pfr/player_urls/player_urls_" + letter + ".json");
         final JsonObject root = JsonParser.parseReader(Files.newBufferedReader(in)).getAsJsonObject();
         final JsonObject playerUrls = root.getAsJsonObject("playerUrls");

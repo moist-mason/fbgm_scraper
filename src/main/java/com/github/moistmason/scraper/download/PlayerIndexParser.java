@@ -6,7 +6,6 @@ import com.google.gson.JsonParser;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.openqa.selenium.json.Json;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -48,7 +47,7 @@ public class PlayerIndexParser {
             final Path input = Path.of("data/pfr/index/player_index_" + letter + ".json");
             final Path output = Path.of("data/pfr/player_urls/player_urls_" + letter + ".json");
             final JsonObject json = JsonParser.parseReader(Files.newBufferedReader(input)).getAsJsonObject();
-            final Document response = HtmlUtil.getHtml(json);
+            final Document response = HtmlUtil.getDocument(json);
             final List<Entry> entries = getEntries(response);
             writeJson(output, entries);
         }
