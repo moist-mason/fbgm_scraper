@@ -6,27 +6,19 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
-import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class HtmlUtil {
     public static final String[] LETTERS = { "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z" };
     public static final String PFR_URL = "https://www.pro-football-reference.com/";
     public static final String PFR_PLAYER_INDEX_HEADER = PFR_URL + "players/";
 
-    // Requests for creating and destroying browser sessions. Sessions make parsing faster.
+    // Requests for creating and destroying browser sessions.
     public static void sessionRequest(final String cmd, final String id) throws IOException, InterruptedException {
         final String payload = """
                 {
@@ -40,7 +32,7 @@ public class HtmlUtil {
         );
 
         if (response.isPresent()) {
-            System.out.println(cmd + " " + id);
+            System.out.print(""); // Need to put something here, but I don't want anything from this flooding the console.
         }
     }
 
@@ -60,13 +52,16 @@ public class HtmlUtil {
 
     // Requests the URL, returns the JSON response.
     public static Optional<String> getUrlResponse(final String url, final String id) throws IOException, InterruptedException {
+
+        // Requests are 30 seconds until timing out.
+        // This seems aggressive, but requests that go beyond 30s will usually error out regardless of the set timeout length, so why wait?
         final String jsonPayload =
                 """
                 {
                     "cmd": "request.get",
                     "url": "${url}",
                     "session": "${id}",
-                    "maxTimeout": 180000
+                    "maxTimeout": 30000
                 }
                 """;
         return getResponse(jsonPayload.replace("${url}", url)
@@ -83,7 +78,9 @@ public class HtmlUtil {
                     .POST(HttpRequest.BodyPublishers.ofString(payload))
                     .build();
             final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return Optional.ofNullable(response.body());
+
+            // Returns empty if an error 500 occurred, meaning that FlareSolverr failed to detect and/or solve the challenge.
+            return response.statusCode() != 500 ? Optional.of(response.body()) : Optional.empty();
         }
     }
 
@@ -141,37 +138,20 @@ public class HtmlUtil {
     }
 
     public static Optional<Elements> getTableRows(final Element parent) {
-        final Optional<Element> tableOpt = getElementByTag(parent, "table");
-
-        if (tableOpt.isPresent()) {
-            final Optional<Element> tbody = getElementByTag(tableOpt.get(), "tbody");
-
-            if (tbody.isPresent()) {
-                return HtmlUtil.getAllElementsByTag(tbody.get(), "tr");
-            }
-        }
-
-        return Optional.empty();
+        final Optional<Element> tbody = getElementByTag(parent, "tbody");
+        return tbody.isPresent() ? HtmlUtil.getAllElementsByTag(tbody.get(), "tr") : Optional.empty();
     }
 
-    public static String getDataFromKey(final String text, final String keyRegex) {
-        return getDataFromKey(text, keyRegex, 1);
+    public static Optional<String> getStringData(final Element tableRow, final String attributeName) {
+        final Optional<Element> cell = tableRow.getElementsByAttributeValue("data_stat", attributeName).stream().findFirst();
+        return cell.map(Element::text);
     }
 
-    public static String getDataFromKey(final String text, final String keyRegex, final int beginIndex) {
+    public static Optional<Integer> getIntegerData(final Element tableRow, final String attributeName) {
+        return getStringData(tableRow, attributeName).map(Integer::parseInt);
+    }
 
-        // Find the expected substring of data using regex.
-        String data;
-        final Matcher matcher = Pattern.compile(keyRegex).matcher(text);
-
-        if (matcher.find()) {
-            data = matcher.group(0);
-
-            // Split the matched data so we separate the key (split[0]) from the data value that we want (split[beginIndex]).
-            final String[] split = data.split(" ");
-            return split[beginIndex];
-        }
-
-        return "";
+    public static Optional<Double> getDoubleData(final Element tableRow, final String attributeName) {
+        return getStringData(tableRow, attributeName).map(Double::parseDouble);
     }
 }
